@@ -19,7 +19,6 @@ df_send_is_order = pd.read_excel(dfs, "Senddate=Orderdate")
 df_list = [df_bijzondere_dagen, df_marketing_campanges, df_weer, df_sea_clicks,
 			 df_budget_radio_tv, df_traffic, df_emails, df_partner_vouchers, df_omzet,
 			 df_ordervolumes, df_sendvolumes, df_send_is_order]
-askjdfha = 0
 
 # Standaardizeer de datums naar dd/mm/jjjj formaat
 # ----------------------------
@@ -93,22 +92,44 @@ for i, df in enumerate(df_list):
 
 # Combineer dataframes met voorspellende variabelen tot combined_df
 
+
+
+
 combined_df = pd.DataFrame({"Date" : df_sendvolumes.iloc[:, 0], "Weekday":df_sendvolumes.iloc[:, 1]})
 skip = ["Date", "Weekday"]
+
+
 for df in df_list[:-4]:
-	print(df)
-	columns = df.columns
+	count = 1
+	collum_names = df.columns
+	print(collum_names)
+	print("Running for dataframe nr {}".format(count))
 	for index, row in df.iterrows():
-		for col_name in columns:
-			for index_combined, datum in enumerate(combined_df[col_name]):
-				if datum == row[0]:
-					combined_df.loc[index_combined, col_name] = df.loc[index, col_name]
-		# zet df.loc[index, col_name] in combined_df waar df.iloc[index, 0] == combined_df.loc[index, "Date"]
+		for index_comb, row_comb in combined_df.iterrows():
+			if row.iloc[0] == row_comb.iloc[0]:	
+				print(row.iloc[0], row_comb.iloc[0])
+				for col_name in collum_names:
+					combined_df.loc[index_comb, col_name] = df.loc[index, col_name]
+				# combined_df.loc[index_comb, ]
+	
+	count += 1
+print(combined_df)
+combined_df.to_csv("combined.csv", index=False)
+print('printed')	
+# for df in df_list[:-4]:
+# 	print(df)
+# 	columns = df.columns
+# 	for index, row in df.iterrows():
+# 		for col_name in columns:
+# 			for index_combined, datum in enumerate(combined_df[col_name]):
+# 				if datum == row[0]:
+# 					combined_df.loc[index_combined, col_name] = df.loc[index, col_name]
+# 		# zet df.loc[index, col_name] in combined_df waar df.iloc[index, 0] == combined_df.loc[index, "Date"]
 
-		# 	if df.loc[index, col_name] in
+# 		# 	if df.loc[index, col_name] in
 
-		# if col_name not in skip:
-		# 	for index, row in combined_df.iterrows():
+# 		# if col_name not in skip:
+# 		# 	for index, row in combined_df.iterrows():
 
-	print(combined_df)
-	# combined_df[col_name]
+# 	print(combined_df)
+# 	# combined_df[col_name]
