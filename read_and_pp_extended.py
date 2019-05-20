@@ -58,33 +58,12 @@ cut_outliers = True
 data.set_index('Date', inplace=True)
 print(data.index)
 # Pak de data tussen 01-01-2017 en 01-04-2019
-data_test = data.loc['01-01-17':'01-04-19', :]
+data_test = data.loc['01-01-12':'01-04-19', :]
+data_test.drop(labels=['Emails geaccepteerd', 'Emails unieke opens', 'Traffic split desktop',
+                 'Traffic split mobile', 'Traffic split tablet', 'Marketing_campagne_cat', 'Multi-cat_type', 'TV', 'ATL - Media', 'Radio'], axis=1, inplace=True)
+data_test = pd.get_dummies(data_test, columns=['Spc dag pos aanloop',	'Spc dag pos', 'Spc dag neg', 'Weekday'])
 
-# One hot encode de kolom multi-cat_type en drop hem
-for index, row in data_test.iterrows():
-	cats = row['Multi-cat_type']
-	if not pd.isnull(cats):
-		cats = cats.lower()
-		cats = cats.replace(" ", '')
-		cats = cats.split(',')
-		for cat in cats:
-			colname = 'multi_cat_type_' + cat
-			data_test.loc[index, colname] = 1
-data_test.drop(['Multi-cat_type'], inplace=True, axis=1)
-
-# One hot encode marketing campagnes en vervang overal Nan door 0
-data_test = pd.get_dummies(data_test, columns=['Marketing_campagne_cat'], prefix='marketing')
-data_test.fillna(0, inplace=True)
-
-# One hot de weekdagen
-data_test = pd.get_dummies(data_test, columns=['Weekday'])
-
-# One hot de bijzondere dagen en aanloop
-data_test = pd.get_dummies(data_test, columns=['Spc dag pos aanloop', 'Spc dag pos', 'Spc dag neg'])
-
-# Drop de marketing budgetten in afwachting van nieuwe betere en verder teruggaande data
-data_test = data_test.drop(['TV', 'Radio', 'ATL - Media'], axis=1)
-# data_test.loc[:, 'Avg. Temperature'] = data_test.loc[:, 'Avg. Temperature'].str.strip('() ,')
+# clean de foktop dingen in temp en regen
 data_test.loc[:, 'Avg. Temperature'] = data_test.loc[:, 'Avg. Temperature'].str.strip(' ,')
 new_col = []
 for joe in data_test.loc[:, 'Avg. Temperature']:
@@ -115,7 +94,7 @@ data_test['rain_time_in_min'] = new_col
 # 	c+=1
 
 # data_test['rain_time_in_min'] = data_test['rain_time_in_min'].astype(int)
-print(list(data_test.columns))
+
 
 # Haalt december en de week voor valentijnsdag uit de data
 if cut_outliers:
@@ -135,5 +114,7 @@ if cut_outliers:
 		bool_bois.append(joe)
 	data_test = data_test[bool_bois]
 	data_test.drop('12-07-18') # drop die gekke dag waarop niks verkocht is
+
+
 # Sla schone data op
-data_test.to_csv('clean_v2_no_outliers.csv')
+data_test.to_csv('clean_v2_extended_no_outliers.csv')

@@ -7,7 +7,6 @@ import math
 from keras.models import Sequential
 from keras.layers import Dense
 from keras.layers import LSTM
-import keras.optimizers
 from keras import optimizers
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.metrics import mean_squared_error
@@ -15,14 +14,13 @@ import pprint as pp
 
 # Globals
 # np.random.seed(10)
-data_set =  'clean_v2_extended.csv'
-look_back =  730
-train_split = 0.6
-# learning_rate = 
+
+look_back = 7
+train_split = 0.7
 
 scaler = MinMaxScaler(feature_range=(0, 1))
-opt = keras.optimizers.Adadelta(lr=1.0, rho=0.95, epsilon=None, decay=0.0)
-no_epochs = 10
+
+no_epochs = 200
 
 # Functies
 def create_dataset(dataset, look_back=1):
@@ -32,12 +30,6 @@ def create_dataset(dataset, look_back=1):
 		a = dataset[i:(i+look_back), :]
 		dataX.append(a)
 	return np.array(dataX)
-
-# def create_truncated_dataset(dataset, look_back):
-# 	dataX = []
-# 	dataset = dataset.values
-
-
 
 def scale(array, scaler):
 	if len(array.shape) > 1:
@@ -77,15 +69,11 @@ def calc_error_percent(results, actual):
 
 
 # Lees data in en sla de index en column labels op
-data = pd.read_csv(data_set)
-print(len(data))
+data = pd.read_csv('clean_v2_extended.csv')
 index = data.loc[:, 'Date']
 columns = list(data.columns)
 columns.remove('Date')
-
-# Drop de rijen waar nan in voorkomt en de kolom met datums
-data.dropna(how='any', inplace=True)
-data = data.drop(labels='Date', axis=1)
+data = data.drop('Date', axis=1)
 
 # Koppel de target variable los van dataframe
 Y_data = data.iloc[look_back-1:, list(data.columns).index('Order volumes total')]
@@ -98,8 +86,6 @@ data = pd.DataFrame(data=data, index=list(index), columns=columns)
 
 # "Batch" de data zodat er time series analyse op gedaan kan worden
 X_batch = create_dataset(data, look_back)
-print(X_batch)
-print(X_batch.shape)
 Y_max = int(Y_data.nlargest(n=1).iloc[0])
 Y_min = int(Y_data.nsmallest(n=1).iloc[0])
 Y_data = Y_data.values
@@ -115,30 +101,26 @@ X_train = X_batch[0 : size_train]
 X_test = X_batch[size_train : ]
 
 Y_train = Y_data[0 : size_train]
-print(len(Y_train))
 Y_test = Y_data[size_train : ]
 Y_train_labels = index.iloc[ : size_train]
 Y_test_labels = index.iloc[size_train : ]
-# raise SystemExit(0)
 
 # Create model and train
 samples, time_steps, features = X_train.shape
 model = Sequential()
-model.add(LSTM(features, input_shape=(time_steps, features), return_sequences=True))
-model.add(LSTM(features))#, return_sequences=True))
-# model.add(LSTM(64))
-model.add(Dense(features))
-model.add(Dense(features))
+model.add(LSTM(128, input_shape=(time_steps, features), return_sequences=True))
+model.add(LSTM(128, return_sequences=True))
+model.add(LSTM(128))
+model.add(Dense(128))
+model.add(Dense(128))
 model.add(Dense(64))
 model.add(Dense(64))
-model.add(Dense(32))
-# # model.add(Dense(64))
 model.add(Dense(1))
 
-model.compile(loss='mean_squared_error', optimizer=opt, metrics=['mse'])
+model.compile(loss='mean_squared_error', optimizer='adam', metrics=['mse'])
 print(model.summary())
 
-history = model.fit(X_train, Y_train, epochs=no_epochs, validation_split=0.2) #validation_data=(X_test, Y_test))
+history = model.fit(X_train, Y_train, epochs=no_epochs, validation_data=(X_test, Y_test))
 
 # Predict test and training sets
 results = model.predict(X_test)
@@ -263,4 +245,4 @@ plt.plot()
 plt.show()
 
 
-# plot_model(model, to_file='figures/model.png', show_shapes=True)
+# plot_model(model, to_file='model.png', show_shapes=True)

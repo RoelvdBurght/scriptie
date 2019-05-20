@@ -16,12 +16,20 @@ import pprint as pp
 # Globals
 # np.random.seed(10)
 data_set =  'clean_v2_extended.csv'
-look_back =  730
-train_split = 0.6
-# learning_rate = 
-
+look_back =  7
+train_split = 0.75
 scaler = MinMaxScaler(feature_range=(0, 1))
-opt = keras.optimizers.Adadelta(lr=1.0, rho=0.95, epsilon=None, decay=0.0)
+
+epoch_range = [100, 250, 500, 750, 1000]
+
+adelta = keras.optimizers.Adadelta(lr=1.0, rho=0.95, epsilon=None, decay=0.0)
+agrad = keras.optimizers.Adagrad(lr=0.01, epsilon=None, decay=0.0)
+sgd = keras.optimizers.SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
+adam = keras.optimizers.Adam(lr=0.001, beta_1=0.9, beta_2=0.999, epsilon=None, decay=0.0, amsgrad=False)
+rms = keras.optimizers.RMSprop(lr=0.001, rho=0.9, epsilon=None, decay=0.0)
+optimizer_range = [adelta, agrad, sgd, adam, rms]
+
+model_architecture = []
 no_epochs = 10
 
 # Functies
@@ -32,12 +40,6 @@ def create_dataset(dataset, look_back=1):
 		a = dataset[i:(i+look_back), :]
 		dataX.append(a)
 	return np.array(dataX)
-
-# def create_truncated_dataset(dataset, look_back):
-# 	dataX = []
-# 	dataset = dataset.values
-
-
 
 def scale(array, scaler):
 	if len(array.shape) > 1:
@@ -119,8 +121,8 @@ print(len(Y_train))
 Y_test = Y_data[size_train : ]
 Y_train_labels = index.iloc[ : size_train]
 Y_test_labels = index.iloc[size_train : ]
-# raise SystemExit(0)
 
+for 
 # Create model and train
 samples, time_steps, features = X_train.shape
 model = Sequential()
@@ -129,9 +131,9 @@ model.add(LSTM(features))#, return_sequences=True))
 # model.add(LSTM(64))
 model.add(Dense(features))
 model.add(Dense(features))
-model.add(Dense(64))
-model.add(Dense(64))
-model.add(Dense(32))
+model.add(Dense(int(features/2)))
+model.add(Dense(int(features/2)))
+model.add(Dense(int(features/4)))
 # # model.add(Dense(64))
 model.add(Dense(1))
 
