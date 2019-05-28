@@ -1,3 +1,7 @@
+# Comment in om CPU te gebruiken
+# import os
+# os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"   # see issue #152
+# os.environ["CUDA_VISIBLE_DEVICES"] = ""
 import pandas as pd
 from keras.utils import plot_model
 import sklearn as sk
@@ -7,6 +11,7 @@ import math
 from keras.models import Sequential
 from keras.layers import Dense
 from keras.layers import LSTM
+from keras.layers import CuDNNLSTM
 import keras.optimizers
 from keras import optimizers
 from sklearn.preprocessing import MinMaxScaler
@@ -17,7 +22,7 @@ import json
 # Globals
 # np.random.seed(10)
 data_set =  'clean_v2_extended.csv'
-look_back =  7
+look_back =  14
 train_split = 0.75
 scaler = MinMaxScaler(feature_range=(0, 1))
 
@@ -118,82 +123,96 @@ Y_test = Y_data[size_train : ]
 Y_train_labels = index.iloc[ : size_train]
 Y_test_labels = index.iloc[size_train : ]
 
-samples, time_steps, features = X_train.shape
+def define_model(model_nr, samples, time_steps, features):
+    # Define models to test
 
-# Define models to test
-model1 = Sequential()
-model1.add(LSTM(features, input_shape=(time_steps, features), return_sequences=True))
-model1.add(LSTM(features))
-model1.add(Dense(features))
-model1.add(Dense(features))
-model1.add(Dense(int(features/2)))
-model1.add(Dense(int(features/2)))
-model1.add(Dense(int(features/4)))
-model1.add(Dense(1))
+    if model_nr == 1:
+        model = Sequential()
+        model.add(LSTM(features, input_shape=(time_steps, features), return_sequences=True))
+        model.add(LSTM(features))
+        model.add(Dense(features))
+        model.add(Dense(features))
+        model.add(Dense(int(features/2)))
+        model.add(Dense(int(features/2)))
+        model.add(Dense(int(features/4)))
+        model.add(Dense(1))
 
-model2 = Sequential()
-model2.add(LSTM(features, input_shape=(time_steps, features)))
-model2.add(Dense(features))
-model2.add(Dense(features))
-model2.add(Dense(int(features/2)))
-model2.add(Dense(int(features/2)))
-model2.add(Dense(int(features/4)))
-model2.add(Dense(1))
+    if model_nr == 2:
+        model = Sequential()
+        model.add(CuDNNLSTM(features, input_shape=(time_steps, features)))
+        model.add(Dense(features))
+        model.add(Dense(features))
+        model.add(Dense(int(features/2)))
+        model.add(Dense(int(features/2)))
+        model.add(Dense(int(features/4)))
+        model.add(Dense(1))
+    
+    if model_nr == 3:
+        model = Sequential()
+        model.add(CuDNNLSTM(features, input_shape=(time_steps, features), return_sequences=True))
+        model.add(CuDNNLSTM(features))
+        model.add(Dense(features))
+        model.add(Dense(features))
+        model.add(Dense(int(features/2)))
+        model.add(Dense(int(features/2)))
+        model.add(Dense(int(features/4)))
+        model.add(Dense(1))
+    
+    if model_nr == 4:
+        model = Sequential()
+        model.add(CuDNNLSTM(128, input_shape=(time_steps, features)))
+        model.add(Dense(128))
+        model.add(Dense(64))
+        model.add(Dense(64))
+        model.add(Dense(32))
+        model.add(Dense(16))
+        model.add(Dense(1))
+    
+    if model_nr == 5:
+        model = Sequential()
+        model.add(CuDNNLSTM(features, input_shape=(time_steps, features), return_sequences=True))
+        model.add(CuDNNLSTM(features, input_shape=(time_steps, features), return_sequences=True))
+        model.add(CuDNNLSTM(features, input_shape=(time_steps, features)))
+        model.add(Dense(features))
+        model.add(Dense(features))
+        model.add(Dense(int(features/2)))
+        model.add(Dense(int(features/4)))
+        model.add(Dense(1))
 
-model2_5 = Sequential()
-model2_5.add(LSTM(features, input_shape=(time_steps, features), return_sequences=True))
-model2_5.add(LSTM(features))
-model2_5.add(Dense(features))
-model2_5.add(Dense(features))
-model2_5.add(Dense(int(features/2)))
-model2_5.add(Dense(int(features/2)))
-model2_5.add(Dense(int(features/4)))
-model2_5.add(Dense(1))
+    if model_nr == 6:
+        model = Sequential()
+        model.add(CuDNNLSTM(features, input_shape=(time_steps, features)))
+        model.add(Dense(features))
+        model.add(Dense(int(features/2)))
+        model.add(Dense(int(features/4)))
+        model.add(Dense(1))
 
-model3 = Sequential()
-model3.add(LSTM(128, input_shape=(time_steps, features)))
-model3.add(Dense(128))
-model3.add(Dense(64))
-model3.add(Dense(64))
-model3.add(Dense(32))
-model3.add(Dense(16))
-model3.add(Dense(1))
+    if model_nr == 7:
+        model = Sequential()
+        model.add(CuDNNLSTM(features, input_shape=(time_steps, features)))
+        model.add(Dense(features))
+        model.add(Dense(int(features/2)))
+        model.add(Dense(1))
+    
+    return model
 
-model4 = Sequential()
-model4.add(LSTM(features, input_shape=(time_steps, features)))
-model4.add(Dense(features))
-model4.add(Dense(features))
-model4.add(Dense(int(features/2)))
-model4.add(Dense(int(features/4)))
-model4.add(Dense(1))
+model_architecture = [1,2,3,4,5]
 
-model5 = Sequential()
-model5.add(LSTM(features, input_shape=(time_steps, features)))
-model5.add(Dense(features))
-model5.add(Dense(int(features/2)))
-model5.add(Dense(int(features/4)))
-model5.add(Dense(1))
-
-model6 = Sequential()
-model6.add(LSTM(features, input_shape=(time_steps, features)))
-model6.add(Dense(features))
-model6.add(Dense(int(features/2)))
-model6.add(Dense(1))
-
-model_architecture = [model1, model2, model2_5, model3, model4, model5, model6]
-
-no_epochs = 3
-iters = 5
-out_file = 'out.txt'
+no_epochs = 150
+iters = 2
+out_file = 'out4.txt'
 
 all_scores = []
 mod_nr = 0
 fail = False
-for model in model_architecture:
+for model_nr in model_architecture:
     model_score = []
     mod_nr += 1
 
     for it in range(iters):
+        samples, time_steps, features = X_train.shape
+        model = define_model(model_nr, samples, time_steps, features)
+        print('--------------- NOW TRAINING MODEL NR {}, ITERATION {} ----------------------'.format(mod_nr, it))
         # Create model and train
         model.compile(loss='mean_squared_error', optimizer=opt, metrics=['mse', 'mae'])
 
@@ -211,7 +230,7 @@ for model in model_architecture:
             loss_train, mse_train, mae_train = model.evaluate(X_train, Y_train, verbose=0)
             print('{} mse: {}'.format(mod_nr, mse_train))
             print('{} mae: {}'.format(mod_nr, mae_train))
-            model_score.append((mse_test, mae_test, mse_test, mae_train, history.history['loss'], history.history['val_loss']))
+            model_score.append((mse_test, mae_test, mse_train, mae_train, history.history['loss'], history.history['val_loss']))
         except:
             print('^'*200)
             print(mod_nr, it)

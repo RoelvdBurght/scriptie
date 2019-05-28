@@ -12,17 +12,17 @@ from keras import optimizers
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.metrics import mean_squared_error
 import pprint as pp
+import tensorflow as tf
 
 # Globals
 # np.random.seed(10)
-data_set =  'clean_v2_extended.csv'
+data_set = 'clean_v2_extended.csv'
 look_back =  730
 train_split = 0.6
-# learning_rate = 
 
 scaler = MinMaxScaler(feature_range=(0, 1))
 opt = keras.optimizers.Adadelta(lr=1.0, rho=0.95, epsilon=None, decay=0.0)
-no_epochs = 10
+no_epochs = 75
 
 # Functies
 def create_dataset(dataset, look_back=1):
@@ -32,12 +32,6 @@ def create_dataset(dataset, look_back=1):
 		a = dataset[i:(i+look_back), :]
 		dataX.append(a)
 	return np.array(dataX)
-
-# def create_truncated_dataset(dataset, look_back):
-# 	dataX = []
-# 	dataset = dataset.values
-
-
 
 def scale(array, scaler):
 	if len(array.shape) > 1:

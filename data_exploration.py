@@ -131,5 +131,5 @@ look_back = 7
 set_split = 0.7
 
 plotter = Plotter(data_size, data_set, look_back)
-# plotter.plot_all_sales()
-plotter.plot_poly_regression(set_split)
+plotter.plot_all_sales()
+# plotter.plot_poly_regression(set_split)
