@@ -1,9 +1,7 @@
 import pandas as pd
 import numpy as np 
 
-def convert(month):
-	month = month.lower()
-	print(month)
+
 def convert(month):
 	month = month.lower()
 	if month == "januari" or month == 'jan':

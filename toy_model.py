@@ -1,6 +1,3 @@
-# import os
-# os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"   # see issue #152
-# os.environ["CUDA_VISIBLE_DEVICES"] = ""
 import keras
 from keras.models import Model
 from keras.layers import Dense
@@ -20,10 +17,11 @@ from tensorflow.python.keras.callbacks import TensorBoard
 from time import time
 import datetime
 
+
 # Globals
 np.random.seed(10)
-data_set = 'clean_v2_extended.csv'
-look_back =  14
+data_set = 'toy_data.csv'
+look_back =  3
 train_split = 0.7
 patience = 250
 
@@ -31,10 +29,10 @@ scaler = MinMaxScaler(feature_range=(0, 1))
 opt = keras.optimizers.Adam()
 no_epochs = 1000
 
-now = datetime.datetime.now().strftime("%m-%d %H:%M:%S")
-model_name = '2lstm + tdist + 3 dense' 
-model_save_file = 'models/best_{}_{}_lb_{}_spl_{}_pt_{}_{}.h5'.format(model_name, data_set[:-4], look_back, train_split, patience, now)
-tensorboard = TensorBoard(log_dir='logs/{}_{}_lb_{}_spl_{}_pt_{}_{}'.format(model_name, data_set[:-4], look_back, train_split, patience, now))
+# now = datetime.datetime.now().strftime("%m-%d %H:%M:%S")
+# model_name = '2lstm + tdist + 3 dense' 
+# model_save_file = 'models/best_{}_{}_lb_{}_spl_{}_pt_{}_{}.h5'.format(model_name, data_set[:-4], look_back, train_split, patience, now)
+# tensorboard = TensorBoard(log_dir='logs/{}_{}_lb_{}_spl_{}_pt_{}_{}'.format(model_name, data_set[:-4], look_back, train_split, patience, now))
 
 # Functies
 def create_dataset(dataset, look_back=1):
@@ -124,40 +122,48 @@ Y_test_labels = index.iloc[size_train : ]
 
 
 samples, time_steps, features = X_train.shape
+
+print(X_train)
 in_test = Input(shape=(time_steps, features))
 
 
 input_layer = Input(shape=(time_steps,features), name='input_layer')
-lstm_layer_1 = CuDNNLSTM(features, name='lstm_layer_1', return_sequences=True)(input_layer)
-lstm_layer_2 = CuDNNLSTM(features, name='lstm_layer_2', return_sequences=True)(lstm_layer_1)
+lstm_layer_1 = CuDNNLSTM(time_steps, name='lstm_layer_1')(input_layer)#, return_sequences=True)(input_layer)
+# flat = Flatten()(lstm_layer_1)
+dense_1 = Dense(1)(lstm_layer_1)
+
+model = Model(inputs=input_layer, outputs=dense_1)
+# flat = Flatten()(lstm_layer_1)
+# conv = Conv1D(1,1)(lstm_layer_1)
+# lstm_layer_2 = CuDNNLSTM(features, name='lstm_layer_2', return_sequences=True)(lstm_layer_1)
 # time_dist = TimeDistributed(Dense(features, name='time_dist_layer'))(lstm_layer_2)
 # flat = Flatten(name='flaten')(time_dist)
-# conv1 = Conv1D(1, 1, strides=1, dilation_rate=365, padding='same', name='conv_layer_1')(flat)
+# conv1 = Conv2D(1, 1, strides=1, dilation_rate=365, padding='same', name='conv_layer_1')(flat)
 
 # dense_1 = Dense(128, name='dense_layer_1')(flat)
 # # flat = Flatten()(dense_1)
 # # drop_1 = Dropout(0.2)(dense_1)
-# dense_2 = Dense(64, name='dense_layer_2')(dense_1)	
+# dense_2 = Dense(64, name='dense_layer_2')(dense_1)
 # drop_2 = Dropout(0.2)(dense_2)
-dense_3 = Dense(32, name='dense_layer_3')(conv1)
+# dense_3 = Dense(32, name='dense_layer_3')(conv1)
 
 # # time_dist = 
-out_layer = Dense(1, name='out_layer')(dense_3)
+# out_layer = Dense(1, name='out_layer')(dense_3)
 
 # conv_layer = Conv1D(1, 2, strides=2)(lstm_layer)
 # out_layer = Dense(1, name='out_layer')(lstm_layer)
 
-model = Model(inputs=input_layer, outputs=out_layer)
 print(model.summary())
 
 model.compile(loss='mean_squared_error', optimizer=opt, metrics=['mse', 'mae'])
 
 # simple early stoppings
-es = EarlyStopping(monitor='val_loss', mode='min', verbose=1, patience=patience)
-mc = ModelCheckpoint(model_save_file, monitor='val_loss', mode='min', verbose=1, save_best_only=True)
+# es = EarlyStopping(monitor='val_loss', mode='min', verbose=1, patience=patience)
+# mc = ModelCheckpoint(model_save_file, monitor='val_loss', mode='min', verbose=1, save_best_only=True)
 
-history = model.fit(X_train, Y_train, epochs=no_epochs, validation_split=0.2, callbacks=[es, mc, tensorboard]) #validation_data=(X_test, Y_test))
+# history = model.fit(X_train, Y_train, epochs=no_epochs, validation_split=0.2)#, callbacks=[es, mc, tensorboard]) #validation_data=(X_test, Y_test))
+# print(model.layers[1].output)
 
 # Predict test and training sets
-results = model.predict(X_test)
-results_training = model.predict(X_train)
+# results = model.predict(X_test)
+# results_training = model.predict(X_train)

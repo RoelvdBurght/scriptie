@@ -32,8 +32,8 @@ class Plotter:
 			self.data = pd.DataFrame(data=data, index=list(self.index), columns=self.columns)
 
 		# Koppel de target variable los van dataframe
-		# self.Y_data = self.data.iloc[self.look_back-1:, list(self.data.columns).index('Order volumes total')]
-		self.Y_data = self.data['Order volumes total']
+		self.Y_data = self.data.iloc[self.look_back-1:, list(self.data.columns).index('Order volumes total')]
+		self.Y_data_all = self.data['Order volumes total']
 		self.data = self.data.drop(labels='Order volumes total', axis=1)
 		self.columns.remove('Order volumes total')
 
@@ -56,7 +56,6 @@ class Plotter:
 			elif self.data_set == 'reg':
 				data = pd.read_csv('clean_v2.csv')
 		if self.data_set == 'toy':
-			print('joi')
 			data = pd.read_csv('toy_data.csv')
 		try:
 			return data
@@ -84,17 +83,14 @@ class Plotter:
 		Y_data = self.Y_data.values
 
 		# Split de train en test data
-		size_train = round(len(self.data) * self.train_split)
-		size_test = len(self.data)-size_train
+		size_train = round(len(X_batch) * self.train_split)
+		size_test = len(X_batch)-size_train
 
-		self.X_train = X_batch[0 : size_train]
+		self.X_train = X_batch[ : size_train]
 		self.X_test = X_batch[size_train : ]
-		print(self.X_train)
 
 		self.Y_train = Y_data[ : size_train]
 		self.Y_test = Y_data[size_train : ]
-		print(self.Y_train)
-		print('----------', self.Y_test[look_back:].shape, '---------------------')
 		self.Y_train_labels = self.index.iloc[ : size_train]
 		self.Y_test_labels = self.index.iloc[size_train : ]
 
@@ -102,7 +98,6 @@ class Plotter:
 		self.prep_data_for_predictions()
 
 		self.results_test = self.model.predict(self.X_test)
-		print('----------', len(self.results_test), '---------------------')
 		self.results_train = self.model.predict(self.X_train)
 
 	def show_predicitons(self):        
@@ -113,14 +108,35 @@ class Plotter:
 		x_locs = np.arange(min(x_axis), max(x_axis), x_plot_interval)
 
 		self.fig = plt.figure(1, figsize=(10,10))
-		ax1 = self.fig.add_subplot(121)
+		ax1 = self.fig.add_subplot(211)
 		ax1.scatter(x_axis, self.results_test, c='r')
-		ax1.scatter(x_axis, self.Y_test[look_back:], c='g')
+		ax1.scatter(x_axis, self.Y_test, c='g')
+		ax1.xaxis.set_ticks(x_locs)
+		ax1.xaxis.set_ticklabels(x_labels, rotation=30, ha='right')
+		ax1.tick_params(axis='x', labelsize='7', labelright=True)
+		ax1.set_xlabel("Date")
+		ax1.set_ylabel("Total sales")
+		ax1.legend(["Predicted", 'Actual'], loc='upper right')	
+		
+		x_plot_interval = 40
+		x_axis = np.linspace(1, len(self.results_train), len(self.results_train))
+		x_labels = self.Y_train_labels.iloc[::x_plot_interval]
+		x_locs = np.arange(min(x_axis), max(x_axis), x_plot_interval)
+
+		ax2 = self.fig.add_subplot(212)
+		ax2.scatter(x_axis, self.results_train, c='r')
+		ax2.scatter(x_axis, self.Y_train, c='g')
+		ax2.xaxis.set_ticks(x_locs)
+		ax2.xaxis.set_ticklabels(x_labels, rotation=30, ha='right')
+		ax2.tick_params(axis='x', labelsize='7', labelright=True)
+		ax2.set_xlabel("Date")
+		ax2.set_ylabel("Total sales")
+		ax2.legend(["Predicted", 'Actual'], loc='upper right')	
 		plt.show()
 
 data_size = 'l'
-data_set = 'toy'
-look_back = 2
+data_set = 'reg'
+look_back = 14
 scale = False
 train_split = 0.7
 model_name = 'best_two layer lstm + 3 dense_clean_v2_extended_lb_14_pt_250.h5'
@@ -128,6 +144,6 @@ model_path = 'models/' + model_name
 
 plotter = Plotter(data_size, data_set, look_back, scale, train_split)
 plotter.prep_data_for_predictions()
-# plotter.load_model(model_path)
-# plotter.predict_test_set()
-# plotter.show_predicitons()
+plotter.load_model(model_path)
+plotter.predict_test_set()
+plotter.show_predicitons()
